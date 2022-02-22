@@ -156,7 +156,7 @@ selectCluster_to_proceed_inflation <- function(inflation.list, IDs, cluster.size
 
 #' lightHIPPO
 #'
-#' @param dat input data matrix
+#' @param dat input data matrix (dense or sparse)
 #' @param K maximum number of clusters
 #' @param initial.round HIPPO rounds using a subset of features, default is 0
 #' @param stop_at when initial.round > 0, each round will select up to this number of features for clustering and it will not go over all the features
@@ -207,7 +207,7 @@ lightHIPPO <- function(dat, K = 10, initial.round = 0, stop_at = 500, correctByK
 
     for(i.round in (initial.round + 1):K){
 
-       go_with_higher_inflationID <- selectCluster_to_proceed_inflation(inflation.tracking, next_round_IDs, cluster.size.cutoff = smallest.cluster.num)
+      go_with_higher_inflationID <- selectCluster_to_proceed_inflation(inflation.tracking, next_round_IDs, cluster.size.cutoff = smallest.cluster.num)
       selected.dat <- dat[, next_round_IDs%in% go_with_higher_inflationID]
       selected.res <- select_features_full(selected.dat, Zscore.cutoff = Zscore.cutoff)
       selected.ID <- selected.res$selected
@@ -248,12 +248,6 @@ lightHIPPO <- function(dat, K = 10, initial.round = 0, stop_at = 500, correctByK
         selected.res <- select_features_full(dat, Zscore.cutoff = Zscore.cutoff)
         selected.ID <- selected.res$selected
         selected.Zscore <- selected.res$Zscore
-        #### Stop at certain proportions ####
-        if(length(selected.ID) <= inflated.gene.num){
-          message(paste0("Less than ", inflated.gene.num, "inflated features left;
-                          terminate the procedure."))
-          break;
-        }
         new.subset.dat <- dat[selected.ID, ]
         clusterID <- run_kmeans_clustering(new.subset.dat)
         next_round_IDs <- clusterID
@@ -344,10 +338,10 @@ identify_common_features <- function(hippo.res){
   return(common_features)
 }
 
-#' Organize HIPPO Features
+#' Post-process HIPPO Features
 #'
 #'This function will take the HIPPO result as input and return selected features for each round.
-#'It will first identify genes that are selected at each round and define those as common features. These genes remain heterogeneous at each round, usually at not interesting. We remove them from the final curated gene list.
+#'It will first identify genes that are selected at each round and define those as common features. These genes remain heterogeneous at each round, usually are not interesting. We remove them from the final curated gene list.
 #'The function will then identify genes that are private to each round, defined as genes that are only inflated at round $k$, but no longer inflated in later rounds. These genes carry information for separation at round $k$, but their heterogeneity got reconciled by the newly introduced cluster.
 #' @param hippo.res output from lightHIPPO
 #' @return A list of selected features and z-scores that are ranked by their significance.
@@ -418,7 +412,7 @@ trace_back_hierarchy <- function(cluster_res){
   return(nodes)
 }
 
-#' Cut HIPPO hierarchy
+#' Clustering pruning
 #'
 #'This function will take the HIPPO result as input and return clustering labels with the desired number of clusters.
 #' @param cluster_res output from lightHIPPO
