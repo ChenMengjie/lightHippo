@@ -13,15 +13,14 @@
 
 In addition, we add the following new characteristics to **lightHippo** procedure: 
 - introducing a function that computes z-score cut-off based on the number of input genes. The default is computed using a significance level of 0.1 after correcting for FDR. 
-- at each round, all eligible genes can be tested for zero-inflation, compared to the original **HIPPO** release that only genes selected in the previous rounds will be subsetted in the following rounds. 
+- at each round, all eligible genes will be tested for zero-inflation, compared to the original **HIPPO** release that only genes selected in the previous rounds will be subsetted in the following rounds. 
 - implementing a post-processing procedure for selected features. This new function will first identify genes that are selected at each round and define those as common features. These genes remain heterogeneous at each round and at the end. They will be removed from the final curated feature list. The function will then identify genes that are private to each round. These are genes only inflated at round $k$, but no longer inflated in later rounds. These genes carry information for separation at round $k$, but their heterogeneity got reconciled by the newly introduced cluster.
 - introducing a function that can prune clustering results to any given $K$. 
 
 
 ## Additional notes 
 The burden of **lightHippo** procedure mainly comes from the number of input genes. It is recommended to filter out genes that are only expressed in very few cells. 
-We will add a procedure that operates on features selected by the previous round like **HIPPO**, since that will significantly save computing time. Empirical analysis show very rare new features will be added by the complete procedure. 
-
+We will add a procedure that operates on features selected by the previous round like **HIPPO**, which will significantly reduce computing time. Empirical analysis show very rare new features will be added by the complete procedure. 
 
 ## Installation
 
@@ -82,19 +81,22 @@ new_group_labels <- cut_hierarchy(check_ttt, K=4)
 To speed up, we recommend to check the inflation on a random subset. 
 ```r 
 total.num.gene <- nrow(dat)
-randomIDs <- sample(1:total.num.gene, 1000)
+randomIDs <- sample(1:total.num.gene, 5000)
 summarizing_dat <- summarize_current_zero_proportions(dat[randomIDs, ], check_ttt$next_round_IDs)
 plot_dat_per_cluster_inflation <- visualize_current_zero_proportions(summarizing_dat)     
-plot_dat_per_cluster_inflation
+png("lightHIPPO_counts_inflation_check.png")
+print(plot_dat_per_cluster_inflation)
+dev.off()
 ```
 
 ### Check mean and non-zero percentage for each cluster on top features or a list of markers
 
 ```r 
 ttID <- cut_hierarchy(check_ttt, K = 4)
-ever.tested.sig <- c(unique(unlist(final_feature_list$ID)))
-tt.selected <- summarize_for_feature_dot(dat2[ever.tested.sig, ], ttID)
+check_these <- final_feature_list$ID[[3]]
+tt.selected <- summarize_for_feature_dot(dat[check_these , ], ttID)
 p <- makeDotplot(input = tt.selected, topN = 50)
+ggsave(filename = "test_feature_round3.pdf", plot = p, width = 20, height = 6)
 ```
 
 
