@@ -19,8 +19,8 @@ In addition, we add the following new characteristics to **lightHippo** procedur
 
 
 ## Additional notes 
-The burden of **lightHippo** procedure mainly comes from the number of input genes. It is recommended to filter out genes that are only expressed in very few cells. 
-We will add a procedure that operates on features selected by the previous round like **HIPPO**, which will significantly reduce computing time. Empirical analysis show very rare new features will be added by the complete procedure. 
+- The burden of **lightHippo** procedure mainly comes from the number of input genes. It is recommended to filter out genes that are only expressed in very few cells. 
+- We will add a procedure that operates on features selected by the previous round like **HIPPO**, which will significantly reduce computing time. Empirical analysis show very rare new features will be added by the complete procedure. 
 
 ## Installation
 
@@ -28,6 +28,15 @@ We will add a procedure that operates on features selected by the previous round
 
 ```r
 devtools::install_github("ChenMengjie/lightHippo")
+```
+
+Read in an example data set. 
+
+```r       
+library(SingleCellExperiment)
+sce = DuoClustering2018::sce_full_Zhengmix4eq(metadata = FALSE)
+head(sce)
+dat <- SingleCellExperiment::counts(sce)
 ```
 
 ## **lightHippo** Procedure Step 1: iterative clustering and feature selection 
