@@ -213,7 +213,6 @@ lightHIPPO <- function(dat, K = 10, initial.round = 0, stop_at = 500, correctByK
       selected.ID <- selected.res$selected
       selected.Zscore <- selected.res$Zscore
 
-
       new.subset.dat <- selected.dat[selected.ID, ]
       clusterID <- run_kmeans_clustering(new.subset.dat)
       next_round_IDs[next_round_IDs%in%go_with_higher_inflationID][clusterID == 2] <- i.round + 1

@@ -1,4 +1,4 @@
-### lightHippo
+## lightHippo
 
 
 **lightHippo** is a light implementation for **HIPPO**. 
@@ -13,12 +13,17 @@
 
 In addition, we add the following new characteristics to **lightHippo** procedure: 
 - introducing a function that computes z-score cut-off based on the number of input genes. The default is computed using a significance level of 0.1 after correcting for FDR. 
-- at each round, all eligible genes will be tested for zero-inflation, compared to the original **HIPPO** release that only genes selected in the previous rounds will be subsetted in the following rounds.
+- at each round, all eligible genes can be tested for zero-inflation, compared to the original **HIPPO** release that only genes selected in the previous rounds will be subsetted in the following rounds. 
 - implementing a post-processing procedure for selected features. This new function will first identify genes that are selected at each round and define those as common features. These genes remain heterogeneous at each round and at the end. They will be removed from the final curated feature list. The function will then identify genes that are private to each round. These are genes only inflated at round $k$, but no longer inflated in later rounds. These genes carry information for separation at round $k$, but their heterogeneity got reconciled by the newly introduced cluster.
 - introducing a function that can prune clustering results to any given $K$. 
 
 
-### Installation
+## Additional notes 
+The burden of **lightHippo** procedure mainly comes from the number of input genes. It is recommended to filter out genes that are only expressed in very few cells. 
+We will add a procedure that operates on features selected by the previous round like **HIPPO**, since that will significantly save computing time. Empirical analysis show very rare new features will be added by the complete procedure. 
+
+
+## Installation
 
 **lightHippo** can be installed from github directly as follows:
 
