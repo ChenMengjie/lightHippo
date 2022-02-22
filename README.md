@@ -9,11 +9,11 @@
 - **lightHippo** only uses kmeans to perform clustering. It can not call alternative clustering algorithms. 
 - **lightHippo** performs SVD using the default of `irlba` in package **irlba**. It will not compute other version of PCs.
 - **lightHippo** tracks the number of inflated gene for each cluster based on a random set (much smaller), not on all of the genes. 
-- **lightHippo** allows early termination of the feature selection at first several rounds. Users can specify the number of rounds with lighter feature selection and the number of features to stop inflation testing.
+- **lightHippo** allows early termination of the feature selection at first several rounds. Users can specify the number of rounds with lighter feature selection and the number of features when to stop inflation testing.
 
 In addition, we add the following new characteristics to **lightHippo** procedure: 
-- introducing a function that computes z-score cut-off based on the number of input genes. The default is computed using a significance level of 0.1 after correcting for FDR; 
-- at each round, all eligible genes will be tested for zero-inflation, compared to the original **HIPPO** release that only genes selected in the previous rounds will be subsetted in the following rounds; 
+- introducing a function that computes z-score cut-off based on the number of input genes. The default is computed using a significance level of 0.1 after correcting for FDR. 
+- at each round, all eligible genes will be tested for zero-inflation, compared to the original **HIPPO** release that only genes selected in the previous rounds will be subsetted in the following rounds.
 - implementing a post-processing procedure for selected features. This new function will first identify genes that are selected at each round and define those as common features. These genes remain heterogeneous at each round and at the end. They will be removed from the final curated feature list. The function will then identify genes that are private to each round. These are genes only inflated at round $k$, but no longer inflated in later rounds. These genes carry information for separation at round $k$, but their heterogeneity got reconciled by the newly introduced cluster.
 - introducing a function that can prune clustering results to any given $K$. 
 
