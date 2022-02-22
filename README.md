@@ -26,7 +26,7 @@ In addition, we add the following new characteristics to **lightHippo** procedur
 devtools::install_github("ChenMengjie/lightHippo")
 ```
 
-## **lightHippo** procedure step 1: iterative clustering and feature selection 
+## **lightHippo** Procedure Step 1: iterative clustering and feature selection 
 
 The main function is `lightHIPPO`, with following arguments:
 - `dat` input data matrix (dense or sparse)
@@ -54,7 +54,7 @@ You can use the following command to run a lighter **HIPPO** procedure on first 
 check_ttt_2 <- lightHIPPO(dat, K = 10, initial.round = 5, stop_by = 500)   
 ```
 
-## **lightHippo** procedure step 2: selected feature post-processing
+## **lightHippo** Procedure Step 2: selected feature post-processing
 
 The function `organizing_hippo_features` will take the HIPPO result as input and return selected features for each round. In brief, this new function will remove common features that appear at each round and identify features that are private to each round. These are genes only inflated at round $k$, but no longer inflated in later rounds. These genes carry information for separation at round $k$, but their heterogeneity got reconciled by the newly introduced cluster.
 
@@ -62,7 +62,7 @@ The function `organizing_hippo_features` will take the HIPPO result as input and
 final_feature_list <- organizing_hippo_features(check_ttt)
 ```
 
-## **lightHippo** procedure step 3:  cluster pruning 
+## **lightHippo** Procedure Step 3:  cluster pruning 
 
 You can use function `cut_hierarchy` to prune the clustering results. This function will take the `lightHIPPO` result as input and return clustering labels with the desired number of clusters.
  
