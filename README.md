@@ -1,14 +1,14 @@
 ### lightHippo
 
 
-**lightHippo** is a light implementation for HIPPO. 
+**lightHippo** is a light implementation for **HIPPO**. 
 
-**HIPPO** is a tool that performs single cell UMI data pre-processing using zero-inflation tests. The main differences of **HIPPO** over existing methods include not requiring normalization or imputation and an iterative hierarchical clustering and feature selection procedure. In order to apply **HIPPO** to large data sets, we make following changes to the original release. 
+**HIPPO** is a tool that performs single cell UMI data pre-processing using zero-inflation tests. The main differences of **HIPPO** over existing methods include 1) recommending no normalization or imputation and 2) an iterative hierarchical clustering and feature selection procedure. In order to apply **HIPPO** to large data sets, we make following changes to the original release. 
 
 - **lightHippo** only computes z-scores for inflation tests. It will not compute p-values or deviance.
 - **lightHippo** only uses kmeans to perform clustering. It can not call alternative clustering algorithms. 
 - **lightHippo** performs SVD using the default of `irlba` in package **irlba**. It will not compute other version of PCs.
-- **lightHippo** tracks inflation gene number in each cluster based on a random set (much smaller), not on all of the genes. 
+- **lightHippo** tracks the number of inflated gene for each cluster based on a random set (much smaller), not on all of the genes. 
 - **lightHippo** allows early termination of the feature selection at first several rounds. Users can specify the number of rounds with lighter feature selection and the number of features to stop inflation testing.
 
 In addition, we add the following new characteristics to **lightHippo** procedure: 
