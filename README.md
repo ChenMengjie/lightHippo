@@ -44,7 +44,7 @@ dat <- SingleCellExperiment::counts(sce)
 
 The main function is `lightHIPPO`, with following arguments:
 - `dat` input data matrix (dense or sparse)
-- `K.round` maximum number of rounds
+- `K.round` maximum number of rounds, if you need M clusters, set K.round = M - 1
 - `initial.labels` The initial group labels to start with. The default is NULL. This is useful for the situation that you wish to perform sub-clustering on existing group labels. When initial labels are provided, initial.round will be forced to 0.
 - `initial.round` HIPPO rounds using a subset of features, default is 0
 - `stop_at` when initial.round > 0, each round will select up to this number of features for clustering and it will not go over all the features
@@ -63,13 +63,25 @@ The main function is `lightHIPPO`, with following arguments:
 - type : "Rooted" if initial.labels = NULL or "Truncated" if generated with initial.labels
 
 ```r       
-check_ttt <- lightHIPPO(dat, K = 10, initial.round = 0)   
+check_ttt <- lightHIPPO(dat, K.round = 9, initial.round = 0)   
 ```
-You can use the following command to run a lighter **HIPPO** procedure on first 5 rounds, where the zero-inflation tests stop when over 500 features are selected based on the z-score cut-offs. The clustering for first 5 round will run on 500 features. 
+You can use the following command to run a lighter **HIPPO** procedure on first 5 rounds, where the zero-inflation tests stop when over 500 features are selected based on the z-score cut-offs. The clustering for first 5 rounds will run on 500 features. 
 
 ```r       
-check_ttt_2 <- lightHIPPO(dat, K = 10, initial.round = 5, stop_by = 500)   
+check_ttt_2 <- lightHIPPO(dat, K.round = 9, initial.round = 5, stop_by = 500)   
 ```
+
+If you want to perform finer subclustering on existing clusters, you can input the labels using the option `initial.label `. This will become helpful if you have identified major cell types but want to apply an alternative clustering method for subtyping. In the following example, we use kmean on UMAP to get cluster labels to initialize lightHIPPO.
+
+```r       
+log_mtx_t = log(t(dat)+1)
+dimred = umap::umap(log_mtx_t)$layout
+km_cluster <- kmeans(dimred, 3)$cluster
+check_ttt_3 <- lightHIPPO(dat, K.round = 6, initial.labels = km_cluster)   
+```
+
+
+
 
 
 ## **lightHippo** Procedure Step 2: selected feature post-processing
