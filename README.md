@@ -71,16 +71,15 @@ You can use the following command to run a lighter **HIPPO** procedure on first 
 check_ttt_2 <- lightHIPPO(dat, K.round = 9, initial.round = 5, stop_by = 500)   
 ```
 
-If you want to perform finer subclustering on existing clusters, you can input the labels using the option `initial.label `. This will become helpful if you have identified major cell types but want to apply an alternative clustering method for subtyping. In the following example, we use kmean on UMAP to get cluster labels to initialize lightHIPPO.
+If you want to perform finer subclustering on existing clusters, you can input the labels using the option `initial.label`. This will become helpful if you have identified major cell types but want to apply an alternative clustering method for subtyping. In the following example, we use kmean on UMAP to get cluster labels to initialize lightHIPPO.
 
 ```r       
 log_mtx_t = log(t(dat)+1)
 dimred = umap::umap(log_mtx_t)$layout
 km_cluster <- kmeans(dimred, 3)$cluster
-check_ttt_3 <- lightHIPPO(dat, K.round = 6, initial.labels = km_cluster)   
+check_ttt_3 <- lightHIPPO(dat, K.round = 6, initial.labels = km_cluster)
+plot(dimred, col=check_ttt_3$next_round_IDs, pch = 20)
 ```
-
-
 
 
 
