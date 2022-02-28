@@ -71,6 +71,7 @@ You can use the following command to run a lighter **HIPPO** procedure on first 
 check_ttt_2 <- lightHIPPO(dat, K = 10, initial.round = 5, stop_by = 500)   
 ```
 
+
 ## **lightHippo** Procedure Step 2: selected feature post-processing
 
 The function `organizing_hippo_features` will take the HIPPO result as input and return selected features for each round. In brief, this new function will remove common features that appear at each round and identify features that are private to each round. These are genes only inflated at round $k$, but no longer inflated in later rounds. These genes carry information for separation at round $k$, but their heterogeneity got reconciled by the newly introduced cluster.
