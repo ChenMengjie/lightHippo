@@ -106,6 +106,8 @@ new_group_labels <- cut_hierarchy(check_ttt, K=4)
 
 ## **lightHippo** Visualizations 
 
+### Visualize the hierarchy
+
 The function `visualize_hippo_hierarchy` will take the lightHIPPO output and visualize the hierarchy. Now only "Rooted" results are supported.
 
 ```r
