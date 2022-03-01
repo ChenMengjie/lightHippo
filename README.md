@@ -82,7 +82,6 @@ plot(dimred, col=check_ttt_3$next_round_IDs, pch = 20)
 ```
 
 
-
 ## **lightHippo** Procedure Step 2: selected feature post-processing
 
 The function `organizing_hippo_features` will take the HIPPO result as input and return selected features for each round. In brief, this new function will remove common features that appear at each round and identify features that are private to each round. These are genes only inflated at round $k$, but no longer inflated in later rounds. These genes carry information for separation at round $k$, but their heterogeneity got reconciled by the newly introduced cluster.
@@ -108,10 +107,16 @@ new_group_labels <- cut_hierarchy(check_ttt, K=4)
 
 ### Visualize the hierarchy
 
-The function `visualize_hippo_hierarchy` will take the lightHIPPO output and visualize the hierarchy. Now only "Rooted" results are supported.
+The function `visualize_hippo_hierarchy` will take the lightHIPPO output and visualize the hierarchy. 
 
 ```r
 visualize_hippo_hierarchy(check_ttt)
+```
+
+The following code will visualize the truncated hierarchy.
+```r
+new.clusters <- cut_hierarchy(check_ttt, K = 4, cut_sequence = TRUE)
+visualize_hippo_hierarchy(new.clusters)
 ```
 
 ### Check zero-inflation for each cluster

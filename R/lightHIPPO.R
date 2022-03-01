@@ -155,6 +155,7 @@ selectCluster_to_proceed_inflation <- function(inflation.list, IDs, cluster.size
 
 
 
+
 #' lightHIPPO
 #'
 #' @param dat input data matrix (dense or sparse)
@@ -166,7 +167,7 @@ selectCluster_to_proceed_inflation <- function(inflation.list, IDs, cluster.size
 #' @param override.Zscore.cutoff a pre-specified cut-off on Z-scores, the default is NULL. If the default z-score cut-off returns too few features, consider to relax the cut-off here.
 #' @param smallest.cluster.num smallest number of cells required in the cluster. Clusters with cells smaller than this number will not be selected for further clustering.
 #' @param random.num if smaller than the number of features, only this random set of features will be used to track numbers of inflated genes in each cluster, which will be used to determine the next cluster for further breakdown.
-#' @param move.by.inflation the metric used to determine the order in the hierarchical clustering, when this option is TRUE, the procedure moves with the cluster with the largest number of inflated genes, when this option is FALSE, it moves with the cluster with large (variance \times number of cells). The latter one favors larger clusters while considering the within-cluster variance. The default if TRUE.
+#' @param move.by.inflation the metric used to determine the order in the hierarchical clustering, when this option is TRUE, the procedure moves with the cluster with the largest number of inflated genes, when this option is FALSE, it moves with the cluster with large (variance \times number of cells). The latter one favors larger clusters while considering the within-cluster variance. The default is TRUE.
 #' @return A list with clustering results, selected features and z-scores.
 #' \itemize{
 #'   \item next_round_IDs - the current cluster labels
@@ -243,6 +244,7 @@ lightHIPPO <- function(dat, K.round = 10, initial.labels = NULL, initial.round =
       res$selected.gene.list <- selected.gene.list
       res$selected.gene.Zscore <- selected.gene.Zscore
       res$type <- "Rooted"
+      res$initial.clusters <- NULL
 
     } else if(is.null(initial.labels) & initial.round == 0) {
 
@@ -296,6 +298,7 @@ lightHIPPO <- function(dat, K.round = 10, initial.labels = NULL, initial.round =
       res$selected.gene.list <- selected.gene.list
       res$selected.gene.Zscore <- selected.gene.Zscore
       res$type <- "Rooted"
+      res$initial.clusters <- NULL
 
     } else if(!is.null(initial.labels)) {
 
@@ -335,10 +338,11 @@ lightHIPPO <- function(dat, K.round = 10, initial.labels = NULL, initial.round =
       }
 
       res$next_round_IDs <- next_round_IDs
-      names(res$sequence) <- 1:length(res$sequence)+2
+      names(res$sequence) <- 1:length(res$sequence)+max(initial.labels)
       res$selected.gene.list <- selected.gene.list
       res$selected.gene.Zscore <- selected.gene.Zscore
       res$type <- "Truncated"
+      res$initial.clusters <- initial.labels
     }
 
   }
@@ -398,6 +402,7 @@ lightHIPPO <- function(dat, K.round = 10, initial.labels = NULL, initial.round =
       res$selected.gene.list <- selected.gene.list
       res$selected.gene.Zscore <- selected.gene.Zscore
       res$type <- "Rooted"
+      res$initial.clusters <- NULL
 
     } else if(is.null(initial.labels) & initial.round == 0) {
 
@@ -460,6 +465,7 @@ lightHIPPO <- function(dat, K.round = 10, initial.labels = NULL, initial.round =
       res$selected.gene.list <- selected.gene.list
       res$selected.gene.Zscore <- selected.gene.Zscore
       res$type <- "Rooted"
+      res$initial.clusters <- NULL
 
     } else if(!is.null(initial.labels)) {
 
@@ -505,10 +511,11 @@ lightHIPPO <- function(dat, K.round = 10, initial.labels = NULL, initial.round =
       }
 
       res$next_round_IDs <- next_round_IDs
-      names(res$sequence) <- 1:length(res$sequence)+2
+      names(res$sequence) <- 1:length(res$sequence)+max(initial.labels)
       res$selected.gene.list <- selected.gene.list
       res$selected.gene.Zscore <- selected.gene.Zscore
       res$type <- "Truncated"
+      res$initial.clusters <- initial.labels
     }
 
 
@@ -618,6 +625,7 @@ lightHIPPO_nested <- function(dat, K.round = 10, initial.round = 0, stop_at = 50
       res$selected.gene.list <- selected.gene.list
       res$selected.gene.Zscore <- selected.gene.Zscore
       res$type <- "Rooted"
+      res$initial.clusters <- NULL
 
     } else {
 
@@ -672,7 +680,7 @@ lightHIPPO_nested <- function(dat, K.round = 10, initial.round = 0, stop_at = 50
       res$selected.gene.list <- selected.gene.list
       res$selected.gene.Zscore <- selected.gene.Zscore
       res$type <- "Rooted"
-
+      res$initial.clusters <- NULL
     }
 
 
@@ -742,6 +750,7 @@ lightHIPPO_nested <- function(dat, K.round = 10, initial.round = 0, stop_at = 50
       res$selected.gene.list <- selected.gene.list
       res$selected.gene.Zscore <- selected.gene.Zscore
       res$type <- "Rooted"
+      res$initial.clusters <- NULL
 
     } else {
 
@@ -807,7 +816,7 @@ lightHIPPO_nested <- function(dat, K.round = 10, initial.round = 0, stop_at = 50
       res$selected.gene.list <- selected.gene.list
       res$selected.gene.Zscore <- selected.gene.Zscore
       res$type <- "Rooted"
-
+      res$initial.clusters <- NULL
     }
 
   }
@@ -815,6 +824,7 @@ lightHIPPO_nested <- function(dat, K.round = 10, initial.round = 0, stop_at = 50
   return(res)
 
 }
+
 
 identify_private_features <- function(hippo.res){
 
@@ -910,18 +920,31 @@ organizing_hippo_features <- function(hippo.res){
 #'This function will take the HIPPO result as input and return clustering labels with the desired number of clusters.
 #' @param cluster_res output from lightHIPPO
 #' @param K maximum number of clusters
+#' @param cut_sequence besides cluster labels, whether to return the truncated hierarchy, the default is FALSE.
 #' @return A vector of cluster labels.
 #' @export
 
-cut_hierarchy <- function(cluster_res,  K){
+cut_hierarchy <- function(cluster_res, K, cut_sequence = FALSE){
   cluster_sequence <- cluster_res$sequence
   tracebackIDs <- cluster_res$next_round_IDs
-  final_cluster_num <- length(cluster_sequence) + 2
+  if(is.null(cluster_res$initial.clusters)){
+    final_cluster_num <- length(cluster_sequence) + 2
+  } else {
+    final_cluster_num <- length(cluster_sequence) + max(cluster_res$initial.clusters)
+  }
   for(rev_ii in c(final_cluster_num:(K+1))){
     tracebackIDs[tracebackIDs%in%rev_ii] <- cluster_sequence[names(cluster_sequence)%in%rev_ii]
   }
-  return(tracebackIDs)
+  if(cut_sequence == TRUE){
+    K_on_sequence <- which(names(cluster_sequence)%in%K)
+    truncated <- cluster_sequence[1:K_on_sequence]
+    res <- list(labels = tracebackIDs, sequence = truncated, type = cluster_res$type)
+    return(res)
+  } else {
+    return(tracebackIDs)
+  }
 }
+
 
 summarize_for_feature_dot <- function(dataset, clusters){
   ttt1 <- apply(dataset, 1, function(x){
@@ -995,8 +1018,18 @@ create_edge_for_sequence <- function(sequence_of_number){
 trace_back_hierarchy <- function(cluster_res){
 
   cluster_sequence <- cluster_res$sequence
-  parent.nodes <- c(1, cluster_sequence)
-  leaf.nodes <- c(2, as.numeric(names(cluster_sequence)))
+
+  if(cluster_res$type == "Rooted"){
+
+    parent.nodes <- c(1, cluster_sequence)
+    leaf.nodes <- c(2, as.numeric(names(cluster_sequence)))
+
+  }  else {
+
+    parent.nodes <- cluster_sequence
+    leaf.nodes <- as.numeric(names(cluster_sequence))
+
+  }
   max.child <- max(leaf.nodes)
   n.round <- length(leaf.nodes)
   renumbered.parent.nodes <- seq(n.round+max.child, max.child+1, by = -1)
@@ -1033,12 +1066,18 @@ trace_back_hierarchy <- function(cluster_res){
 
   connectivity <- as.data.frame(added)
   connectivity <- connectivity[order(connectivity[, 1], decreasing = T), ]
+  connectivity <- connectivity[connectivity[, 1]!=connectivity[,2], ]
   colnames(connectivity) <- c("parent", "child")
-  siblings_sequence <- connectivity[connectivity$child%in%c(1, leaf.nodes), "child"]
-
+  if(cluster_res$type == "Rooted"){
+    siblings_sequence <- connectivity[connectivity$child%in%c(1, leaf.nodes), "child"]
+  }  else {
+    siblings_sequence <- connectivity[connectivity$child%in%c(unique(cluster_res$initial.clusters), leaf.nodes), "child"]
+  }
   res <- list(connectivity = connectivity, siblings_sequence = siblings_sequence)
   return(res)
+
 }
+
 
 
 
@@ -1052,92 +1091,183 @@ trace_back_hierarchy <- function(cluster_res){
 
 visualize_hippo_hierarchy <- function(cluster_res, vertical = TRUE, colorlist = NULL){
 
-
-  if(cluster_res$type == "Truncated"){
-    stop("Now only support the visualization of a rooted tree.")
+  if(is.null(colorlist)){
+    colorlist <- c("turquoise4", "lavender", "slateblue1", "violet", "skyblue1",  "gold", "khaki", "pink", "salmon", "limegreen", "chocolate", "maroon", "cyan", "purple", "blue", "yellow", "red",  "brown", '#FFAAD4', '#00CC00', '#66B2FF', '#B266FF', '#FFD4AA', '#AAFFD4', '#CC0000', "#B266CC")
   }
 
   res <- trace_back_hierarchy(cluster_res)
   connectivity <- res$connectivity
   siblings_sequence <- res$siblings_sequence
 
-  des.list <- .dendro.node.descendant(connectivity)
-  ans.list <- .dendro.node.ancestor(connectivity)
 
-  one.tree <- des.list[[which.max(unlist(lapply(des.list, length))[-max(connectivity$parent)])]]
-  siblings_sequence <- c(siblings_sequence[siblings_sequence%in%one.tree], siblings_sequence[!siblings_sequence%in%one.tree])
+  if(cluster_res$type == "Rooted"){
 
-  if(vertical){
-    xx <- .dendro.node.dis(connectivity)
-    yy <- .dendro.node.height(connectivity, siblings_sequence)
-  } else {
-    yy <- .dendro.node.dis(connectivity)
-    xx <- .dendro.node.height(connectivity, siblings_sequence)
-  }
+    des.list <- .dendro.node.descendant(connectivity)
+    ans.list <- .dendro.node.ancestor(connectivity)
+    one.tree <- des.list[[which.max(unlist(lapply(des.list, length))[-max(connectivity$parent)])]]
+    siblings_sequence <- c(siblings_sequence[siblings_sequence%in%one.tree], siblings_sequence[!siblings_sequence%in%one.tree])
 
-  plot.new();plot.window(ylim=c(min(xx) - 0.1, max(xx) + 0.1), xlim=c(min(yy) - 0.1, max(yy) + 0.1))
-  par(mar=c(0, 0, 0, 0))
-  ##put in background
-  for(k in 1:nrow(connectivity)){
-    lines(c(yy[connectivity$child[k]],
-            yy[connectivity$parent[k]]),
-          c(xx[connectivity$child[k]],
-            xx[connectivity$parent[k]]),
-          col='gray', lwd=60)
-  }
+    if(vertical){
+      xx <- .dendro.node.dis(connectivity)
+      yy <- .dendro.node.height(connectivity, siblings_sequence)
+    } else {
+      yy <- .dendro.node.dis(connectivity)
+      xx <- .dendro.node.height(connectivity, siblings_sequence)
+    }
 
-  leaf.node <- connectivity$child[!connectivity$child%in%connectivity$parent]
+    plot.new();plot.window(ylim=c(min(xx) - 0.1, max(xx) + 0.1), xlim=c(min(yy) - 0.1, max(yy) + 0.1))
+    par(mar=c(0, 0, 0, 0))
+    ##put in background
+    for(k in 1:nrow(connectivity)){
+      lines(c(yy[connectivity$child[k]],
+              yy[connectivity$parent[k]]),
+            c(xx[connectivity$child[k]],
+              xx[connectivity$parent[k]]),
+            col='gray', lwd=60)
+    }
 
-  if(is.null(colorlist)){
-    colorlist <- c("turquoise4", "lavender", "slateblue1", "violet", "skyblue1",  "gold", "khaki", "pink", "salmon", "limegreen", "chocolate", "maroon", "cyan", "purple", "blue", "yellow", "red",  "brown", '#FFAAD4', '#00CC00', '#66B2FF', '#B266FF', '#FFD4AA', '#AAFFD4', '#CC0000', "#B266CC")
-  }
-  if(length(leaf.node) > length(colorlist)){
-    color <- grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
-    colorlist <- sample(color, length(leaf.node))
-  }
+    leaf.node <- connectivity$child[!connectivity$child%in%connectivity$parent]
 
-  width.set <- 1
-  root <- max(connectivity$parent)
-  plotted <- NULL
-  for(jj in leaf.node){
-    ans.jj <- c(jj, ans.list[[jj]])
-    if(width.set > 1){
-      with.common.ans <- intersect(plotted, ans.jj)
-      with.common.ans <- with.common.ans[!with.common.ans%in%root]
-      if(length(with.common.ans)==0){
-        width.set <- 1
+    if(length(leaf.node) > length(colorlist)){
+      color <- grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
+      colorlist <- sample(color, length(leaf.node))
+    }
+
+    width.set <- 1
+    root <- max(connectivity$parent)
+    plotted <- NULL
+    for(jj in leaf.node){
+      ans.jj <- c(jj, ans.list[[jj]])
+      if(width.set > 1){
+        with.common.ans <- intersect(plotted, ans.jj)
+        with.common.ans <- with.common.ans[!with.common.ans%in%root]
+        if(length(with.common.ans)==0){
+          width.set <- 1
+        }
+      }
+      lines.jj <- create_edge_for_sequence(ans.jj)
+      for(kk in 1:nrow(lines.jj)){
+        lines(c(yy[lines.jj[kk, 1]],
+                yy[lines.jj[kk, 2]]),
+              c(xx[lines.jj[kk, 1]],
+                xx[lines.jj[kk, 2]]),
+              col=colorlist[jj], lwd=60-width.set*5)
+
+      }
+      plotted <- c(plotted, ans.jj)
+      width.set <- width.set + 1
+    }
+
+    for(jj in 1:c(max(connectivity$parent)-1)){
+      if(is.null(des.list[[jj]])){
+        text(yy[jj], xx[jj], jj, col = "black")
+      } else {
+        aa <- unlist(des.list[[jj]])
+        aa <- aa[aa%in%leaf.node]
+        str.jj <- paste(aa,  collapse= ", ")
+        text(yy[jj], xx[jj], str.jj, col = "black")
       }
     }
-    lines.jj <- create_edge_for_sequence(ans.jj)
-    for(kk in 1:nrow(lines.jj)){
-      lines(c(yy[lines.jj[kk, 1]],
-              yy[lines.jj[kk, 2]]),
-            c(xx[lines.jj[kk, 1]],
-              xx[lines.jj[kk, 2]]),
-            col=colorlist[jj], lwd=60-width.set*5)
 
+  } else {
+    des.list <- .dendro.node.descendant.multiroots(connectivity)
+    ans.list <- .dendro.node.ancestor.multiroots(connectivity)
+    roots <- which(unlist(lapply(ans.list, function(x){any(x==0)})))
+
+
+    for(kkk in roots){
+      des.from.one.root <- des.list[[kkk]]
+      if(any(des.from.one.root!=0)){
+        one.branch <- des.from.one.root[which.max(unlist(lapply(des.list[des.from.one.root], length)))]
+        one.tree <- des.list[[one.branch]]
+        if(any(one.tree!=0)){
+          siblings_sequence <- c(siblings_sequence[siblings_sequence%in%one.tree], siblings_sequence[!siblings_sequence%in%one.tree])
+        }
+      }
     }
-    plotted <- c(plotted, ans.jj)
-    width.set <- width.set + 1
-  }
 
-  for(jj in 1:c(max(connectivity$parent)-1)){
-    if(is.null(des.list[[jj]])){
-      text(yy[jj], xx[jj], jj, col = "black")
-    } else {
-      aa <- unlist(des.list[[jj]])
-      aa <- aa[aa%in%leaf.node]
-      str.jj <- paste(aa,  collapse= ", ")
-      text(yy[jj], xx[jj], str.jj, col = "black")
+
+    xx <- .dendro.node.dis.multiroots(connectivity, roots)
+    offset <- 0
+    yy <- rep(0, length(xx))
+    for(kkk in rev(roots)){
+      des.from.one.root <- des.list[[kkk]]
+      size.tree <- length(des.from.one.root)
+      if(size.tree > 1){
+        sub.connectivity <- connectivity[connectivity$parent%in%des.from.one.root | connectivity$child%in%des.from.one.root, ]
+        yy_roots <- .dendro.node.height(sub.connectivity, siblings_sequence[siblings_sequence%in%des.from.one.root])
+        yy[des.from.one.root] <- yy_roots[des.from.one.root] + offset
+        yy[kkk] <- yy_roots[kkk] + offset
+      } else {
+        yy[des.from.one.root] <- offset
+        yy[kkk] <- offset
+      }
+      offset <- max(yy) + 1
     }
+
+    if(vertical == FALSE){
+      zz <- yy
+      yy <- xx
+      xx <- zz
+    }
+
+    plot.new();plot.window(ylim=c(min(xx) - 0.1, max(xx) + 0.1), xlim=c(min(yy) - 0.1, max(yy) + 0.1))
+    par(mar=c(0, 0, 0, 0))
+    ##put in background
+    for(k in 1:nrow(connectivity)){
+      lines(c(yy[connectivity$child[k]],
+              yy[connectivity$parent[k]]),
+            c(xx[connectivity$child[k]],
+              xx[connectivity$parent[k]]),
+            col='gray', lwd=60)
+    }
+
+    leaf.node <- connectivity$child[!connectivity$child%in%connectivity$parent]
+
+    if(length(leaf.node) > length(colorlist)){
+      color <- grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
+      colorlist <- sample(color, length(leaf.node))
+    }
+
+    width.set <- 1
+    root <- max(connectivity$parent)
+    plotted <- NULL
+    for(jj in leaf.node){
+      ans.jj <- c(jj, ans.list[[jj]])
+      if(width.set > 1){
+        with.common.ans <- intersect(plotted, ans.jj)
+        with.common.ans <- with.common.ans[!with.common.ans%in%root]
+        if(length(with.common.ans)==0){
+          width.set <- 1
+        }
+      }
+      lines.jj <- create_edge_for_sequence(ans.jj)
+      for(kk in 1:nrow(lines.jj)){
+        lines(c(yy[lines.jj[kk, 1]],
+                yy[lines.jj[kk, 2]]),
+              c(xx[lines.jj[kk, 1]],
+                xx[lines.jj[kk, 2]]),
+              col=colorlist[jj], lwd=60-width.set*5)
+
+      }
+      plotted <- c(plotted, ans.jj)
+      width.set <- width.set + 1
+    }
+
+    for(jj in 1:c(max(connectivity$parent)-1)){
+      if(any(des.list[[jj]]==0)){
+        text(yy[jj], xx[jj], jj, col = "black")
+      } else {
+        aa <- unlist(des.list[[jj]])
+        aa <- aa[aa%in%leaf.node]
+        str.jj <- paste(aa,  collapse= ", ")
+        text(yy[jj], xx[jj], str.jj, col = "black")
+      }
+    }
+
+
   }
-
-
-
 }
-
-
-
 
 
 .dendro.node.height <- function(connectivity, siblings_sequence){
@@ -1196,6 +1326,7 @@ visualize_hippo_hierarchy <- function(cluster_res, vertical = TRUE, colorlist = 
   num.of.node <- max(connectivity$parent)
   descendant <- NULL
   for(i in 1:num.of.node){
+
     descendant[[i]] <- sort(find.descendant(connectivity, i))
   }
 
@@ -1229,10 +1360,90 @@ visualize_hippo_hierarchy <- function(cluster_res, vertical = TRUE, colorlist = 
 }
 
 
+.dendro.node.ancestor.multiroots <- function(connectivity){
+
+  find.ancestor <- function(z, node){
+    child <- node
+    ancestor.list <- NULL
+    while(1){
+      child <- z$parent[z$child%in%child]
+      if(length(child)==0){
+        break
+      } else {
+        ancestor.list <- c(ancestor.list, child)
+      }
+    }
+    return(ancestor.list)
+  }
+
+  num.of.node <- max(connectivity$parent)
+  ancestor <- NULL
+  for(i in 1:num.of.node){
+    aa <- find.ancestor(connectivity, i)
+    if(is.null(aa)){
+      ancestor[[i]] <- 0
+    } else {
+      ancestor[[i]] <- sort(aa)
+    }
+  }
+  return(ancestor)
+}
 
 
+.dendro.node.dis.multiroots <- function(connectivity, roots){
+  ancestor <- max(connectivity$parent)
+  edge.length <- function(z, node){
+    if(node %in%roots){
+      count <- 0
+    } else {
+      count <- 1
+    }
+    parent <- node
+    while(parent < ancestor){
+      parent <- z$parent[z$child==parent]
+      if(any(z$child==parent)){
+        count <- 1 + count
+      }  else {
+        break
+      }
+    }
+    return(count)
+  }
+  edge.degree <- NULL
+  for(i in 1:(max(connectivity$parent))){
+    edge.degree <- c(edge.degree, edge.length(connectivity, i))
+  }
+  return(edge.degree)
+}
 
 
+.dendro.node.descendant.multiroots <- function(connectivity){
 
+  find.descendant <- function(z, node){
+    parent <- node
+    descendant.list <- NULL
+    while(1){
+      parent <- z$child[z$parent%in%parent]
+      if(length(parent)==0){
+        break
+      } else {
+        descendant.list <- c(descendant.list, parent)
+      }
+    }
+    return(descendant.list)
+  }
 
+  num.of.node <- max(connectivity$parent)
+  descendant <- NULL
+  for(i in 1:num.of.node){
+    aa <- find.descendant(connectivity, i)
+    if(is.null(aa)){
+      descendant[[i]] <- 0
+    } else {
+      descendant[[i]] <- sort(aa)
+    }
+  }
+
+  return(descendant)
+}
 
